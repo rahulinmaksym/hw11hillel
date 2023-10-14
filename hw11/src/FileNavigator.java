@@ -4,9 +4,10 @@ import java.util.*;
 
 public class FileNavigator {
 
-    private List<FileData> listOfFiles = new ArrayList<>();
+    private Map<String, List<FileData>> listsOfFilesByPaths = new HashMap<String, List<FileData>>();
 
     public void add(String path) {
+        List<FileData> listOfFiles = new ArrayList<>();
         File directory = new File(path);
         if(directory.isDirectory()) {
             File[] listOfFilesInDirectory = directory.listFiles();
@@ -14,27 +15,27 @@ public class FileNavigator {
                 listOfFiles.add(new FileData(file.getName(), file.length(), path));
             }
         }
-        else {
-            System.out.println("Invalid directory");
-        }
+        listsOfFilesByPaths.put(path, listOfFiles);
     }
 
     public List<FileData> find(String path) {
-        List<FileData> listOfFilesByPath = new ArrayList<>();
-        File directory = new File(path);
-        if(directory.isDirectory()) {
+        List<FileData> resultList = new ArrayList<>();
+        if(listsOfFilesByPaths.containsKey(path)) {
+            List<FileData> listOfFiles = listsOfFilesByPaths.get(path);
             for(FileData file : listOfFiles) {
-                if(Objects.equals(file.getPath(), path)) listOfFilesByPath.add(file);
+                if(Objects.equals(file.getPath(), path)) resultList.add(file);
             }
         }
-        else {
-            System.out.println("Invalid directory");
-        }
-        return listOfFilesByPath;
+        return resultList;
     }
 
     public List<FileData> filterByByteSize(long byteSize) {
+        List<FileData> listOfFiles = new ArrayList<>();
         List<FileData> listOfFilesFilteredByByteSize = new ArrayList<>();
+        String[] arrayOfPaths = listsOfFilesByPaths.keySet().toArray(new String[0]);
+        for(String path : arrayOfPaths) {
+            listOfFiles.addAll(listsOfFilesByPaths.get(path));
+        }
         for(FileData file : listOfFiles) {
             if(file.getByteSize() <= byteSize) listOfFilesFilteredByByteSize.add(file);
         }
@@ -42,16 +43,15 @@ public class FileNavigator {
     }
 
     public void remove(String path) {
-        File directory = new File(path);
-        if(directory.isDirectory()) {
-            listOfFiles.removeIf(file -> Objects.equals(file.getPath(), path));
-        }
-        else {
-            System.out.println("Invalid directory");
-        }
+        listsOfFilesByPaths.remove(path);
     }
 
     public List<FileData> sortByByteSize() {
+        List<FileData> listOfFiles = new ArrayList<>();
+        String[] arrayOfPaths = listsOfFilesByPaths.keySet().toArray(new String[0]);
+        for(String path : arrayOfPaths) {
+            listOfFiles.addAll(listsOfFilesByPaths.get(path));
+        }
         List<FileData> sortedListOfFiles = new ArrayList<>(listOfFiles);
         Comparator<FileData> fileDataComparator = Comparator.comparingLong(FileData::getByteSize);
         sortedListOfFiles.sort(fileDataComparator);
